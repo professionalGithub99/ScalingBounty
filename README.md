@@ -12,7 +12,7 @@ principalids/users can join and unjoin secondary canisters as they please. (Howe
 
 Provide a security interface such that secondary canisters can hold private data from many users but only deliver requests to authorized requesters. Attempt to use as few inter-canister calls as possible. 
 
-TO SEE CODES STRUCTURE SEE DIAGRAM BELOW. Essentially, main.mo is the primary canister, and it creates many instances of NodeCanisters (NodeCanisters.mo).
+TO SEE CODES STRUCTURE SEE DIAGRAMS AT BOTTOM OF PAGE. Essentially, main.mo is the primary canister, and it creates many instances of NodeCanisters (NodeCanisters.mo).
 These live in /src/Main directory.
 
 ## Running the project locally
