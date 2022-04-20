@@ -94,7 +94,9 @@ take any of the canisters the first user is apart of and join it
 dfx canister call main join_canister '(principal "<that principal id>")
 ```
 
-![Image description](bountyreal.png)
+![Flowchart of workflow](00.png)
+
+![Imortant note about scalability](11.png)
 
 ## Licenscing 
 

@@ -19,9 +19,8 @@ actor Main{
 	public type canister_status=Management.canister_status;
 	var canister_ids:L.List<CanisterId> =L.nil<CanisterId>();
 	var principal_canisters:AL.AssocList<Principal,B.Buffer<Principal>> =L.nil<(Principal,B.Buffer<Principal>)>();
-	var canister_text:Text="";
 
-/*allows you to view all the principal Ids with their respective canister_ids that are being stored in this central canister*/
+//allows you to view all the principal Ids with their respective canister_ids that are being stored in this central canister
 	public query func view_principals_and_canisters():async [(Principal,[Principal])]{
 		var node_principals_arr=L.toArray<(Principal,B.Buffer<Principal>)>(principal_canisters);
 		var node_principals_arr_mapped=A.map<(Principal,B.Buffer<Principal>),(Principal,[Principal])>(node_principals_arr,func(x:(Principal,B.Buffer<Principal>)):(Principal,[Principal]){return (x.0,x.1.toArray());});
@@ -63,6 +62,8 @@ actor Main{
 	principal_canisters:=AL.replace<Principal,B.Buffer<Principal>>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y},?canisters_of_principal_buffer_updated).0;
 	return principals_in_canister;
 	};
+
+
 	public shared(msg) func join_canister(_principal:Principal):async[Principal]{
 		assert(L.find<CanisterId>(canister_ids,func(x:Principal):Bool{x==_principal})!=null);
 	let canister=actor(P.toText(_principal)):NodeCanister;
@@ -72,6 +73,10 @@ actor Main{
      principal_canisters:=AL.replace<Principal,B.Buffer<Principal>>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y},?canisters_of_principal_buffer_updated).0;
 		return principals_of_canister;};
 
+
+
+
+//---------------Helper functions------
 	func add_to_buffer<T>(equality_function:(T)->Bool,t:T,b:?B.Buffer<T>):B.Buffer<T>{
 	switch(b){
 	case(null){var empty_buffer=B.Buffer<T>(0);
