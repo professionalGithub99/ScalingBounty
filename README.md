@@ -1,5 +1,8 @@
 # Summary: Shared ownerships of Canisters with the purpose of fullfilling the scaling bounty
 
+![Flowchart of workflow](00.png)
+
+![Imortant note about scalability](11.png)
 
 The purpose of this project is to create canisters that have shared ownership. However, this is different than allowing multiple canisters to have control of the canister in the default sense. The problem is some default canister functions give full access to anyone with control (ie. there is only one level of control). A quick analogy is in a joint bank account from bank, you can have a married couple with each of their name on it but each party is able to completely withdraw funds. In a divorce, things can become messy if one party decides to withdraw everything quickly since both parties have full control. Instead, it would be nice to create a joint bank account where maybe people can vote on money spent, split evenly the amounts, divy up the percentage owned etc. In essence if the default settings for multiple users with control over a canister is like a legacy joint bank account,this program is meant to create extra sharing functionality for canisters! 
 
@@ -12,7 +15,7 @@ principalids/users can join and unjoin secondary canisters as they please. (Howe
 
 Provide a security interface such that secondary canisters can hold private data from many users but only deliver requests to authorized requesters. Attempt to use as few inter-canister calls as possible. 
 
-TO SEE CODES STRUCTURE SEE DIAGRAMS AT BOTTOM OF PAGE. Essentially, main.mo is the primary canister, and it creates many instances of NodeCanisters (NodeCanisters.mo).
+TO SEE CODES STRUCTURE SEE DIAGRAMS AT TOP OF PAGE. Essentially, main.mo is the primary canister, and it creates many instances of NodeCanisters (NodeCanisters.mo).
 These live in /src/Main directory.
 
 ## Running the project locally
@@ -94,9 +97,6 @@ take any of the canisters the first user is apart of and join it
 dfx canister call main join_canister '(principal "<that principal id>")
 ```
 
-![Flowchart of workflow](00.png)
-
-![Imortant note about scalability](11.png)
 
 ## Licenscing 
 
