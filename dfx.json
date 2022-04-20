@@ -3,19 +3,6 @@
     "main":{
 	    "main":"src/Main/main.mo",
 	    "type":"motoko"
-    },
-    "bounty_assets": {
-      "dependencies": [
-        "main"
-      ],
-      "frontend": {
-        "entrypoint": "src/bounty_assets/src/index.html"
-      },
-      "source": [
-        "src/bounty_assets/assets",
-        "dist/bounty_assets/"
-      ],
-      "type": "assets"
     }
   },
   "defaults": {
