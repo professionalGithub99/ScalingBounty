@@ -17,23 +17,17 @@ type canister_status =
              stopping;
            };
  };
-type NodeCanister = 
- service {
-   add_controlling_principal: (principal) -> ();
-   get_controlling_principals: () -> (vec principal);
-   remove_controlling_principal: (principal) -> ();
- };
 service : {
-  add_node_canister: () -> (NodeCanister, nat);
-  create_canister: () -> (text);
-  first_avail_node_canister: () -> (opt nat);
-  get_all_node_canisters: () -> (vec principal) query;
-  join_canister: (principal, nat) -> ();
-  node_indexes_of_caller: () -> (vec nat);
-  unjoin_canister: (principal, nat) -> ();
+  create_canister: () -> (vec principal);
+  get_all_canister_ids: () -> (vec principal) query;
+  join_canister: (principal) -> (vec principal);
+  unjoin_canister: (principal) -> (vec principal);
   view_canister_statuses: () -> (vec opt canister_status);
-  view_principals_and_canisters: () -> (vec record {
-                                              principal;
-                                              text;
-                                            }) query;
+  view_canisters_ids_of_caller: () -> (vec principal);
+  view_principals_and_canisters: () ->
+   (vec record {
+          principal;
+          vec principal;
+        }) query;
+  view_principals_of_canister: (principal) -> (vec principal);
 }

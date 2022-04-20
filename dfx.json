@@ -1,17 +1,8 @@
 {
   "canisters": {
-	   "ledger": {
-      "type": "custom",
-      "wasm": "ledger.wasm",
-      "candid": "ledger.public.did"
-    },
     "main":{
 	    "main":"src/Main/main.mo",
 	    "type":"motoko"
-    },
-    "bounty": {
-      "main": "src/bounty/main.mo",
-      "type": "motoko"
     },
     "bounty_assets": {
       "dependencies": [

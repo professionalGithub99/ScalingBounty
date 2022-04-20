@@ -1,9 +1,4 @@
 import type { Principal } from '@dfinity/principal';
-export interface NodeCanister {
-  'add_controlling_principal' : (arg_0: Principal) => Promise<undefined>,
-  'get_controlling_principals' : () => Promise<Array<Principal>>,
-  'remove_controlling_principal' : (arg_0: Principal) => Promise<undefined>,
-}
 export interface canister_status {
   'status' : { 'stopped' : null } |
     { 'stopping' : null } |
@@ -20,13 +15,16 @@ export interface definite_canister_settings {
   'compute_allocation' : bigint,
 }
 export interface _SERVICE {
-  'add_node_canister' : () => Promise<[Principal, bigint]>,
-  'create_canister' : () => Promise<string>,
-  'first_avail_node_canister' : () => Promise<[] | [bigint]>,
-  'get_all_node_canisters' : () => Promise<Array<Principal>>,
-  'join_canister' : (arg_0: Principal, arg_1: bigint) => Promise<undefined>,
-  'node_indexes_of_caller' : () => Promise<Array<bigint>>,
-  'unjoin_canister' : (arg_0: Principal, arg_1: bigint) => Promise<undefined>,
+  'create_canister' : () => Promise<Array<Principal>>,
+  'get_all_canister_ids' : () => Promise<Array<Principal>>,
+  'join_canister' : (arg_0: Principal) => Promise<Array<Principal>>,
+  'unjoin_canister' : (arg_0: Principal) => Promise<Array<Principal>>,
   'view_canister_statuses' : () => Promise<Array<[] | [canister_status]>>,
-  'view_principals_and_canisters' : () => Promise<Array<[Principal, string]>>,
+  'view_canisters_ids_of_caller' : () => Promise<Array<Principal>>,
+  'view_principals_and_canisters' : () => Promise<
+      Array<[Principal, Array<Principal>]>
+    >,
+  'view_principals_of_canister' : (arg_0: Principal) => Promise<
+      Array<Principal>
+    >,
 }

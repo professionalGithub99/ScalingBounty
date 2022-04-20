@@ -1,4 +1,3 @@
-import Ledger "Ledger";
 import L "mo:base/List";
 import AL "mo:base/AssocList";
 import P "mo:base/Principal";
