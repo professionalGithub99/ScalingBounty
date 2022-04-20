@@ -1,4 +1,4 @@
-import { bounty } from "../../declarations/bounty";
+import { main } from "../../declarations/main";
 
 document.querySelector("form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -9,11 +9,11 @@ document.querySelector("form").addEventListener("submit", async (e) => {
   button.setAttribute("disabled", true);
 
   // Interact with foo actor, calling the greet method
-  const greeting = await bounty.greet(name);
+  const greeting = await main.greet(name);
 
   button.removeAttribute("disabled");
 
-  document.getElementById("greeting").innerText = greeting;
+  //document.getElementById("greeting").innerText = greeting;
 
   return false;
 });

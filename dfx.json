@@ -15,7 +15,7 @@
     },
     "bounty_assets": {
       "dependencies": [
-        "bounty"
+        "main"
       ],
       "frontend": {
         "entrypoint": "src/bounty_assets/src/index.html"

@@ -15,9 +15,11 @@ type AssocList =
        List;
      };
 service : {
-  get_balance: (principal) -> ();
+  get_balance: (principal) -> (nat64);
   get_registered_ids: (principal) -> (opt principal);
   register_id: (principal, opt principal) -> (AssocList, opt principal);
+  test_management_canister: (principal) -> (principal);
+  test_self_call: () -> ();
   view_registered_ids: () -> (AssocList);
   whoami: () -> (principal);
 }

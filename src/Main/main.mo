@@ -7,98 +7,120 @@ import P "mo:base/Principal";
 import A "mo:base/Array";
 import AL"mo:base/AssocList";
 import N "mo:base/Nat";
+import B "mo:base/Buffer";
+import O "mo:base/Option";
 import Char "mo:base/Char";
 import Nat32 "mo:base/Nat32";
 import Management "Management";
 actor Main{
+ 	public type CanisterId=Principal;
 	public type NodeCanister=NodeCanisters.NodeCanister;
 	public type ManagementInterface=Management.Interface;
 	public type canister_status=Management.canister_status;
-	public type node_canister_index=Nat;
+	var canister_ids:L.List<CanisterId> =L.nil<CanisterId>();
 	var node_canisters:L.List<NodeCanister> =L.nil<NodeCanister>();
-	var principal_canisters:AL.AssocList<Principal,Text> =L.nil<(Principal,Text)>();
+	var principal_canisters:AL.AssocList<Principal,B.Buffer<Principal>> =L.nil<(Principal,B.Buffer<Principal>)>();
+	var canister_text:Text="";
+
+/*allows you to view all the principal Ids with their respective canister_ids that are being stored in this central canister*/
+	public query func view_principals_and_canisters():async [(Principal,[Principal])]{
+		var node_principals_arr=L.toArray<(Principal,B.Buffer<Principal>)>(principal_canisters);
+		var node_principals_arr_mapped=A.map<(Principal,B.Buffer<Principal>),(Principal,[Principal])>(node_principals_arr,func(x:(Principal,B.Buffer<Principal>)):(Principal,[Principal]){return (x.0,x.1.toArray());});
+		return node_principals_arr_mapped;
+	};
 
 
- 	public query func get_all_node_canisters(): async [Principal]{
-       var node_canister_arr=L.toArray<NodeCanister>(node_canisters);
-       var node_principals_arr=A.mapFilter<NodeCanister,Principal>(node_canister_arr,func(x:NodeCanister):?Principal{return ?(P.fromActor(x));});
-       return node_principals_arr;
-	};
-  
-	public query func view_principals_and_canisters():async [(Principal,Text)]{
-		var node_principals_arr=L.toArray<(Principal,Text)>(principal_canisters);
-		return node_principals_arr;
-	};
-	 func node_indexes_of_principal(_principal:Principal): [Nat]{
-		var canister_indexes_as_string:?Text=AL.find(principal_canisters,_principal,func(x:Principal,y:Principal):Bool{x==y;}); 	
-		switch(canister_indexes_as_string){
-			case (null){
-				var node_array=A.init<Nat>(0,0);
-				var imm_node_array=A.freeze<Nat>(node_array);
-				return imm_node_array;
-			};
-			case(?text){
-			  var imm_node_array=text_to_nat_array(text,','); 
-			  return imm_node_array;
-			};
-		};
-	};
-	public shared(msg) func node_indexes_of_caller(): async [Nat]{
-	       var node_indexes=node_indexes_of_principal(msg.caller);
-	       return node_indexes;
-	};
-	public shared(msg) func join_canister(_principal:Principal,_index:Nat):async (){
-	var canister_indexes_as_string:?Text=AL.find(principal_canisters,_principal,func(x:Principal,y:Principal):Bool{x==y;}); 	
-		switch(canister_indexes_as_string){
-			case (null){
-	        var canister_index_as_text=N.toText(_index);
-		D.print(canister_index_as_text);
-	        principal_canisters:=AL.replace<Principal,Text>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y;},?canister_index_as_text).0;
-			};
-			case(?text){
-			var canister_index_array=text_to_nat_array(text,',');
-			var canister_index_found=A.find<Nat>(canister_index_array,func(x:Nat):Bool{x==_index;});
-			if(canister_index_found==null){
-			var word=text#","#N.toText(_index);
-	        	principal_canisters:=AL.replace<Principal,Text>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y;},?word).0;
-			}
-			else{return;};
-			};
-		};
-		var canister=L.get<NodeCanister>(node_canisters,_index);
-		switch(canister){
-			case (null){
-			return;
-			};
-			case(?can){
-       			await can.add_controlling_principal(msg.caller);
-			};
-		};
-	};
-	public shared(msg) func unjoin_canister(_principal:Principal,_index:Nat):async (){
-	var canister_indexes_as_string:?Text=AL.find(principal_canisters,_principal,func(x:Principal,y:Principal):Bool{x==y;}); 	
-		switch(canister_indexes_as_string){
-			case (null){
-			return;
-			};
-			case(?text){
-		var canister=L.get<NodeCanister>(node_canisters,_index);
-		switch(canister){
-			case (null){
-			return;
-			};
-			case(?can){
-       			await can.remove_controlling_principal(msg.caller);
-			};
-		};
-			  var imm_node_array=text_to_nat_array(text,','); 
-			  imm_node_array:=A.filter<Nat>(imm_node_array,func(x:Nat):Bool{x!=_index;});
-			  var updated_canister_index_as_text=nat_array_to_text(imm_node_array);
-	        	principal_canisters:=AL.replace<Principal,Text>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y;},?updated_canister_index_as_text).0;
-			};
-		};
+	public shared(msg) func view_canisters_ids_of_caller(): async [Principal]{
+	       var node_principals=node_canister_ids_of_principal(msg.caller);
+	       return node_principals;
 	};
 
+	func node_canister_ids_of_principal(_principal:Principal):[Principal]{
+	      var node_principals_as_buffer=AL.find<Principal,B.Buffer<Principal>>(principal_canisters,_principal,func(x:Principal,y:Principal):Bool{x==y});
+	      var unwrapped_buffer=O.getMapped<B.Buffer<Principal>,B.Buffer<Principal>>(node_principals_as_buffer,func(b:B.Buffer<Principal>):B.Buffer<Principal>{return b},B.Buffer<Principal>(0));
+	     var node_principals_as_arr=unwrapped_buffer.toArray();
+	      return node_principals_as_arr;
+	};
+
+
+	public shared(msg) func create_canister():async [Principal]{
+	   	let self:Principal=P.fromActor(Main);
+		let canister=await NodeCanisters.NodeCanister(self);
+		let canister_id=P.fromActor(canister);
+		canister_ids:=L.push<CanisterId>(canister_id,canister_ids);
+		var principals_of_canister=await canister.add_controlling_principal(msg.caller);
+		var canisters_of_principal_buffer=AL.find<Principal,B.Buffer<Principal>>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y});
+		var canisters_of_principal_buffer_updated=add_to_buffer<Principal>(func(x:Principal):Bool{x==canister_id},canister_id,canisters_of_principal_buffer);
+     principal_canisters:=AL.replace<Principal,B.Buffer<Principal>>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y},?canisters_of_principal_buffer_updated).0;
+		return principals_of_canister;
+	};
+
+	public shared(msg) func unjoin_canister(_principal:Principal):async [Principal]{
+    	assert(L.find<CanisterId>(canister_ids,func(x:Principal):Bool{x==_principal})!=null);
+	let canister=actor(P.toText(_principal)):NodeCanister;
+	var principals_in_canister=await canister.remove_controlling_principal(msg.caller);
+	var canisters_of_principal_buffer=AL.find<Principal,B.Buffer<Principal>>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y});
+	var canisters_of_principal_buffer_updated=remove_from_buffer<Principal>(func(x:Principal):Bool{x==_principal},func(x:Principal):Bool{x!=_principal},_principal,canisters_of_principal_buffer);
+	principal_canisters:=AL.replace<Principal,B.Buffer<Principal>>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y},?canisters_of_principal_buffer_updated).0;
+	return principals_in_canister;
+	};
+	public shared(msg) func join_canister(_principal:Principal):async[Principal]{
+		assert(L.find<CanisterId>(canister_ids,func(x:Principal):Bool{x==_principal})!=null);
+	let canister=actor(P.toText(_principal)):NodeCanister;
+		var principals_of_canister=await canister.add_controlling_principal(msg.caller);
+		var canisters_of_principal_buffer=AL.find<Principal,B.Buffer<Principal>>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y});
+		var canisters_of_principal_buffer_updated=add_to_buffer<Principal>(func(x:Principal):Bool{x==_principal},_principal,canisters_of_principal_buffer);
+     principal_canisters:=AL.replace<Principal,B.Buffer<Principal>>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y},?canisters_of_principal_buffer_updated).0;
+		return principals_of_canister;};
+
+	func add_to_buffer<T>(equality_function:(T)->Bool,t:T,b:?B.Buffer<T>):B.Buffer<T>{
+	switch(b){
+	case(null){var empty_buffer=B.Buffer<T>(0);
+	empty_buffer.add(t);
+        D.print("z");
+	return empty_buffer;
+	};
+	case(?x){
+	     let array_of_buffer=x.toArray();
+	     var element:?T=A.find<T>(array_of_buffer,equality_function);
+	     switch(element){
+	     case(null){ D.print("y");x.add(t); return x;};
+	     case(?z){D.print("x");return x;};
+	     };
+	};
+	};
+	};
+
+	func remove_from_buffer<T>(equality_function:(T)->Bool,inequality_function:(T)->Bool,t:T,b:?B.Buffer<T>):B.Buffer<T>{
+	switch(b){
+	case(null){var empty_buffer=B.Buffer<T>(0);
+	D.print("zz");
+	return empty_buffer;
+	};
+	case(?x){
+	     let array_of_buffer=x.toArray();
+	     var element:?T=A.find<T>(array_of_buffer,equality_function);
+	     switch(element){
+	     case(null){
+	D.print("rr");
+	     return x;
+	     };
+	     case(?z){var filtered_array_of_buffer=A.filter<T>(array_of_buffer,inequality_function);
+	     var filtered_buffer=convert_array_to_buffer<T>(filtered_array_of_buffer);
+	D.print("yy");
+	     return filtered_buffer;};
+	     };
+	};
+	};
+	};
+	func convert_array_to_buffer<T>(array:[T]):B.Buffer<T>{
+	var size=I.size<T>(array.vals());
+	   var buffer=B.Buffer<T>(size);
+	   for(i in I.range(0,size-1)){
+	   buffer.add(array[i]);
+	   };
+	   return buffer;
+	};
 	func text_to_nat_array(_text:Text,_delimiter:Char):[Nat]{
 				var node_array=A.init<Nat>(I.size(T.split(_text,#char _delimiter)),0);
 				var j:Nat=0;
@@ -108,27 +130,7 @@ actor Main{
 				var imm_node_array=A.freeze<Nat>(node_array);
 				return imm_node_array;
 				};
-       public shared(msg) func create_canister(): async Text{
-       var node_canister_tuple=await add_node_canister();
-       var canister_index=node_canister_tuple.1;
-       var canister=node_canister_tuple.0;
-       await canister.add_controlling_principal(msg.caller);
-	var canister_indexes=node_indexes_of_principal(msg.caller);
-        var arr_size=I.size<Nat>(A.vals<Nat>(canister_indexes));
-	if(arr_size==0){
-	        var canister_index_as_text=N.toText(canister_index);
-		D.print(canister_index_as_text);
-	        principal_canisters:=AL.replace<Principal,Text>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y;},?canister_index_as_text).0;
-		return nat_array_to_text(node_indexes_of_principal(msg.caller));
-		}
-        else{  
-	var index_text=nat_array_to_text(canister_indexes);
-	index_text#=",";
-	index_text#=N.toText(canister_index);
-	principal_canisters:=AL.replace<Principal,Text>(principal_canisters,msg.caller,func(x:Principal,y:Principal):Bool{x==y;},?index_text).0;
-	return index_text;
-	};
-	};
+
  
        func nat_array_to_text(nat_array: [Nat]): Text{
         var text:Text="";
@@ -145,23 +147,6 @@ actor Main{
        };
        return text;
        };
-	public func first_avail_node_canister():async ?Nat{
-		var c_status:?canister_status=null;
-		var node_canisters_arr=L.toArray<NodeCanister>(node_canisters);
-		var node_canister_size=L.size(node_canisters);
-		for (x in node_canisters_arr.keys()){
-			let management_canister=actor("aaaaa-aa"):ManagementInterface;
-			let canister_stats=await management_canister.canister_status({canister_id=P.fromActor(node_canisters_arr[x])});
-c_status:=?canister_stats;
-	 let principal_id=P.toText(P.fromActor(node_canisters_arr[x]));
-	 D.print("principal_id: "#principal_id );
-	 switch (c_status){
-		 case(null){};
-		 case(?can_stats) {if(can_stats.memory_size < 10000000){D.print(N.toText(can_stats.memory_size)# "size "# principal_id#" "#N.toText(x));return ?x}};
-	 };
-		};
-		return null;
-	};
 
 	public func view_canister_statuses():async [?canister_status]{
 		var node_canisters_arr=L.toArray<NodeCanister>(node_canisters);
@@ -179,7 +164,7 @@ c_status:=?canister_stats;
 	public func add_node_canister():async (NodeCanister,Nat){
 		let self:Principal=P.fromActor(Main);
 		let node_canister=await NodeCanisters.NodeCanister(self);
-node_canisters:=L.push<NodeCanister>(node_canister,node_canisters);
+	node_canisters:=L.push<NodeCanister>(node_canister,node_canisters);
 	       D.print(P.toText(P.fromActor(node_canister)));
 	       return (node_canister,L.size(node_canisters)-1);
 	};
@@ -195,6 +180,22 @@ num := num * 10 +  charToNum;
 		};
 
 		num;
+	};
+
+  public func view_principals_of_canister(_principal:Principal): async [Principal]{
+    assert(L.find<CanisterId>(canister_ids,func(x:Principal):Bool{x==_principal})!=null);
+    var opt_canister_id=L.find<CanisterId>(canister_ids,func(x:Principal):Bool{x==_principal});
+    switch(opt_canister_id){
+    case (null){
+			var node_array:[Principal]=[];
+			return node_array;};
+	case(?can_id){
+	let canister=actor(P.toText(_principal)):NodeCanister;
+	return await canister.view_controlling_principals();};
+  };};
+ 	public query func get_all_canister_ids(): async [Principal]{
+       var canister_ids_arr=L.toArray<CanisterId>(canister_ids);
+       return canister_ids_arr;
 	};
 
 };
